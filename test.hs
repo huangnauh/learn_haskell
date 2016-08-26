@@ -1,3 +1,6 @@
+import qualified Data.Map as M
+import qualified Data.List as L
+
 doubleMe :: Int -> Int
 doubleMe x = x + x
 doubleUs :: Int -> Int -> Int
@@ -51,6 +54,9 @@ tell (x:xs) = show x ++ " " ++ tell xs
 sum' :: (Num a) => [a] -> a
 sum' [] = 0
 sum' (x:xs) = x + sum' xs
+
+summ :: (Num a) => [a] -> a
+summ = foldl (+) 0
 
 capital :: String -> String
 capital "" = "Empty string"
@@ -170,3 +176,35 @@ chain 1 = [1]
 chain n
     | even n = n:chain (n `div` 2)
     | odd  n = n:chain (n*3 + 1)
+
+search :: (Eq a) => [a] -> [a] -> Bool
+search needle haystack =
+    let nlen = length needle
+    in foldl (\acc x -> if take nlen x == needle then True else acc) False (L.tails haystack)
+
+
+findKey :: (Eq k) => k -> [(k, v)] -> Maybe v
+findKey key [] = Nothing
+findKey key ((k,v):xs)
+    | key == k  = Just v
+    | otherwise = findKey key xs
+
+
+findKey' :: (Eq k) => k -> [(k, v)] -> Maybe v
+findKey' key = foldr (\(k,v) acc -> if key == k then Just v else acc) Nothing
+
+phoneBook =
+    [("betty","555-2938")
+    ,("betty","342-2492")
+    ,("bonnie","452-2928")
+    ,("patsy","493-2928")
+    ,("patsy","943-2929")
+    ,("patsy","827-9162")
+    ,("lucille","205-2928")
+    ,("wendy","939-8282")
+    ,("penny","853-2492")
+    ,("penny","555-2111")
+    ]
+
+phoneBookToMap :: (Ord k) => [(k, String)] -> M.Map k String
+phoneBookToMap xs = M.fromListWith (\acc x -> acc ++ ", " ++ x) xs
