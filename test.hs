@@ -208,3 +208,118 @@ phoneBook =
 
 phoneBookToMap :: (Ord k) => [(k, String)] -> M.Map k String
 phoneBookToMap xs = M.fromListWith (\acc x -> acc ++ ", " ++ x) xs
+
+
+data Either' a b = Left' a | Right' b deriving (Show, Eq)
+
+instance Functor (Either' a) where
+    fmap f (Left' x) = Left' x
+    fmap f (Right' x) = Right' (f x)
+
+
+data LockerState = Taken | Free deriving (Show, Eq)
+
+type Code = String
+
+type LockerMap = M.Map Int (LockerState, Code)
+
+lockerLookup :: Int -> LockerMap -> Either' String Code
+lockerLookup lockerNumber map =
+    case M.lookup lockerNumber map of
+        Nothing -> Left' $ "Locker number " ++ show lockerNumber ++ " not exist"
+        Just (status, code) -> if status /= Taken
+                               then Right' code
+                               else Left' $ "Locker " ++ show lockerNumber ++ " is already taken"
+
+
+lockers :: LockerMap
+lockers = M.fromList
+    [(100,(Taken,"ZD39I"))
+    ,(101,(Free,"JAH3I"))
+    ,(103,(Free,"IQSA9"))
+    ,(105,(Free,"QOTSA"))
+    ,(109,(Taken,"893JJ"))
+    ,(110,(Taken,"99292"))
+    ]
+
+infixr 5 :-:
+data List' a = Empty | a :-: (List' a) deriving (Show, Read, Eq, Ord)
+
+infixr 5 .++
+(.++) :: List' a -> List' a -> List' a
+Empty .++ ys = ys
+(x :-: xs) .++ ys = x :-: (xs .++ ys)
+
+data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
+
+singleton :: a -> Tree a
+singleton x = Node x EmptyTree EmptyTree
+
+treeInsert :: (Ord a) => a -> Tree a -> Tree a
+treeInsert x EmptyTree = singleton x
+treeInsert x (Node a left right)
+    | x == a = Node x left right
+    | x < a  = Node a (treeInsert x left) right
+    | x > a  = Node a left (treeInsert x right)
+
+treeElem :: (Ord a) => a -> Tree a -> Bool
+treeElem x EmptyTree = False
+treeElem x (Node a left right)
+    | x == a = True
+    | x < a  = treeElem x left
+    | x > a  = treeElem x right
+
+instance Functor Tree where
+    fmap f EmptyTree = EmptyTree
+    fmap f (Node x left right) = Node (f x) (fmap f left) (fmap f right)
+
+nums = [8,6,4,1,7,3,5]
+numsTree =foldr treeInsert EmptyTree nums
+
+--class Eq' a where
+--    (==) :: a -> a -> Bool
+--    (/=) :: a -> a -> Bool
+--    x == y = not (x /= y)
+--    x /= y = not (x == y)
+
+data TrafficLight = Red | Yellow | Green
+
+instance Eq TrafficLight where
+    Red   == Red   = True
+    Green == Green = True
+    Yellow== Yellow= True
+    _     == _     = False
+
+instance Show TrafficLight where
+    show Red    = "Red Light"
+    show Yellow = "Yellow Light"
+    show Green  = "Green Light"
+
+class YesNo a where
+    yesno :: a -> Bool
+
+
+instance YesNo (Maybe a) where
+    yesno (Just _) = True
+    yesno Nothing = False
+
+instance YesNo [a] where
+    yesno [] = False
+    yesno _  = True
+
+yesnoif :: (YesNo y) => y -> a -> a -> a
+yesnoif yesnoVal yesnoResult noResult =
+    if yesno yesnoVal then yesnoResult else noResult
+
+class Tofu t where
+    tofu :: j a -> t a j
+
+data Frank a b = Frank {frankField :: b a} deriving (Show)
+
+instance Tofu Frank where
+    tofu x = Frank x
+
+data Barry t k p = Barry { yabba :: p, dabba :: t k}
+
+instance Functor (Barry a b) where
+    fmap f (Barry {yabba=x, dabba=y}) = Barry{yabba= f x, dabba=y}
