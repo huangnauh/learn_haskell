@@ -1,6 +1,6 @@
 import qualified Control.Monad as CM
 import qualified Data.Char as C
-import System.IO as IO
+import System.IO
 
 main1 = do
     line <- getLine
@@ -64,6 +64,7 @@ main8 = do
 
 main9 = do
     withFile' "test.txt" ReadMode (\handle -> do
+        hSetBuffering handle $ BlockBuffering (Just 2048)
         contents <- hGetContents handle
         putStr contents)
 
@@ -78,7 +79,6 @@ main10 = do
     contents <- readFile "test.txt"
     putStr contents
 
-main = do
+main11 = do
     contents <- readFile "test.txt"
     writeFile "testcaps.txt" (map C.toUpper contents)
-    
