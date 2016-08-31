@@ -47,5 +47,3 @@ roadStep (pathA, pathB) (Section a b c) =
                         else (C, c):(A, a):pathA
     in (newPathToA, newPathToB)
 
-
-

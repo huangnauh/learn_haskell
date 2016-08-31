@@ -1,5 +1,6 @@
 import qualified Data.Map as M
 import qualified Data.List as L
+import qualified Control.Applicative as App
 
 doubleMe :: Int -> Int
 doubleMe x = x + x
@@ -323,3 +324,20 @@ data Barry t k p = Barry { yabba :: p, dabba :: t k}
 
 instance Functor (Barry a b) where
     fmap f (Barry {yabba=x, dabba=y}) = Barry{yabba= f x, dabba=y}
+
+
+--ZipList' :: [a] -> ZipList' a
+newtype ZipList' a = ZipList' [a] deriving Show
+--newtype ZipList a = ZipList {getZipList :: [a]}
+
+instance Functor ZipList' where
+   fmap f (ZipList' xs) = ZipList' (map f xs)
+
+instance Applicative ZipList' where
+    pure x = ZipList' (repeat x)
+    ZipList' fs <*> ZipList' xs = ZipList' (zipWith (\f x -> f x) fs xs)
+
+sequenceA' :: (Applicative f) => [f a] -> f [a]
+sequenceA' = foldr (App.liftA2 (:)) (pure [])
+--sequenceA' [] = pure []
+--sequenceA' (x:xs) = (:) <$> x <*> sequenceA' xs
