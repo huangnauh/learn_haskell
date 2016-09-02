@@ -1,6 +1,7 @@
 import qualified Data.Map as M
 import qualified Data.List as L
 import qualified Control.Applicative as App
+import qualified Data.Foldable as F
 
 doubleMe :: Int -> Int
 doubleMe x = x + x
@@ -217,6 +218,12 @@ instance Functor (Either' a) where
     fmap f (Left' x) = Left' x
     fmap f (Right' x) = Right' (f x)
 
+instance (Error e) => Monad (Either' e) where
+    return x = Right' x
+    Right x  >>= f = f x
+    Left err >>= f = Left err
+    fail msg = Left (strMsg msg)
+
 
 data LockerState = Taken | Free deriving (Show, Eq)
 
@@ -252,6 +259,12 @@ Empty .++ ys = ys
 (x :-: xs) .++ ys = x :-: (xs .++ ys)
 
 data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Read, Eq)
+instance F.Foldable Tree where
+    foldMap f EmptyTree = mempty
+    foldMap f (Node x l r) = F.foldMap f l `mappend` 
+                    f x `mappend` 
+                    F.foldMap f r
+
 
 singleton :: a -> Tree a
 singleton x = Node x EmptyTree EmptyTree
@@ -341,3 +354,41 @@ sequenceA' :: (Applicative f) => [f a] -> f [a]
 sequenceA' = foldr (App.liftA2 (:)) (pure [])
 --sequenceA' [] = pure []
 --sequenceA' (x:xs) = (:) <$> x <*> sequenceA' xs
+
+newtype Pair b a = Pair {getPair :: (a, b)} deriving (Eq, Show)
+instance Functor (Pair c) where
+    fmap f (Pair (x,y)) = Pair (f x, y)
+
+
+newtype Any = Any {getAny :: Bool} deriving (Eq, Ord, Read, Show, Bounded)
+
+instance Monoid Any where
+    mempty = Any False
+    Any x `mappend` Any y = Any (x || y)
+
+class Monad m => MonadPlus m where
+    mzero :: m a
+    mplus :: m a -> m a -> m a
+
+instance MonadPlus [] where
+    mzero = []
+    mplus = (++)
+
+guard :: (MonadPlus m) => Bool -> m ()
+guard True = return ()
+guard False = mzero
+
+type KnightPos = (Int, Int)
+moveKnight :: KnightPos -> [KnightPos]
+moveKnight (c, r) = do
+    (c', r') <- [(c+2,r-1),(c+2,r+1),(c-2,r-1),(c-2,r+1)
+                ,(c+1,r-2),(c+1,r+2),(c-1,r-2),(c-1,r+2)]
+    guard (c' `elem` [1..8] && r' `elem` [1..8])
+    return (c', r')
+
+int3 :: KnightPos -> [KnightPos]
+int3 start = do
+    first <- moveKnight start
+    second <- moveKnight first
+    moveKnight second
+
